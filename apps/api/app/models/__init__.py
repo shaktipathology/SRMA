@@ -1,0 +1,7 @@
+# Import all models so alembic autogenerate can discover them
+from app.models.base import Base
+from app.models.review import Review
+from app.models.paper import Paper
+from app.models.stats_job import StatsJob
+
+__all__ = ["Base", "Review", "Paper", "StatsJob"]

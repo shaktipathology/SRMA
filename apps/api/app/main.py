@@ -1,12 +1,25 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.db import engine
 from app.routers import health, papers, reviews
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    yield
+    # Shutdown — dispose connection pool cleanly
+    await engine.dispose()
+
 
 app = FastAPI(
     title="SRMA Engine API",
     description="Systematic Review & Meta-Analysis Engine",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
