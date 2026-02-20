@@ -1,0 +1,96 @@
+services:
+  # ─── PostgreSQL 16 ───────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: srma_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-srma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-srma_password}
+      POSTGRES_DB: ${POSTGRES_DB:-srma_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-srma} -d ${POSTGRES_DB:-srma_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - srma_net
+
+  # ─── Redis 7 ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: srma_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - srma_net
+
+  # ─── MinIO ───────────────────────────────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: srma_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-srma_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-srma_minio_secret}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - srma_net
+
+  # ─── Grobid 0.8.0 ────────────────────────────────────────────────────────────
+  grobid:
+    image: lfoppiano/grobid:0.8.0
+    container_name: srma_grobid
+    restart: unless-stopped
+    ports:
+      - "${GROBID_PORT:-8070}:8070"
+    environment:
+      JAVA_OPTS: "-Xmx4g -Xms1g"
+    healthcheck:
+      test: ["CMD-SHELL", "perl -e 'use Socket; socket(S,PF_INET,SOCK_STREAM,0); connect(S,sockaddr_in(8070,inet_aton(\"127.0.0.1\"))) or exit 1; close S; exit 0'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+    networks:
+      - srma_net
+
+volumes:
+  postgres_data:
+    name: srma_postgres_data
+  redis_data:
+    name: srma_redis_data
+  minio_data:
+    name: srma_minio_data
+
+networks:
+  srma_net:
+    name: srma_network
+    driver: bridge
