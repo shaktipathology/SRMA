@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     # Grobid
     grobid_url: str = "http://localhost:8070"
 
+    # Claude / Anthropic
+    anthropic_api_key: str = ""
+
+    # NCBI Entrez
+    ncbi_api_key: str = ""
+
     # App
     secret_key: str = "dev-secret-key-change-in-production"
     debug: bool = True
