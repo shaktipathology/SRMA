@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.db import engine
-from app.routers import health, papers, reviews, protocol, search
+from app.routers import health, papers, reviews, protocol, search, screening
 
 
 @asynccontextmanager
@@ -35,6 +35,7 @@ app.include_router(papers.router, prefix="/api/v1/papers", tags=["papers"])
 app.include_router(reviews.router, prefix="/api/v1/reviews", tags=["reviews"])
 app.include_router(protocol.router, prefix="/api/v1/protocol", tags=["protocol"])
 app.include_router(search.router, prefix="/api/v1/search", tags=["search"])
+app.include_router(screening.router, prefix="/api/v1/screen", tags=["screening"])
 
 
 @app.get("/")

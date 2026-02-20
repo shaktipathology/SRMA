@@ -5,5 +5,6 @@ from app.models.paper import Paper
 from app.models.stats_job import StatsJob
 from app.models.protocol_version import ProtocolVersion
 from app.models.search_query import SearchQuery
+from app.models.screening_decision import ScreeningDecision
 
-__all__ = ["Base", "Review", "Paper", "StatsJob", "ProtocolVersion", "SearchQuery"]
+__all__ = ["Base", "Review", "Paper", "StatsJob", "ProtocolVersion", "SearchQuery", "ScreeningDecision"]
