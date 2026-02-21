@@ -21,7 +21,6 @@ PHASE_NAMES = {
     5: "Full-text screening",
     6: "Data extraction",
     7: "Risk of bias assessment",
-    8: "Meta-analysis",
     9: "Publication bias assessment",
 }
 
@@ -89,20 +88,6 @@ async def phase7_rob_assess(
 ) -> StubResponse:
     """Phase 7: Risk of bias assessment stub."""
     return await _create_phase_result(db, 7, body)
-
-
-@router.post(
-    "/meta/run",
-    response_model=StubResponse,
-    status_code=status.HTTP_201_CREATED,
-    tags=["stubs"],
-)
-async def phase8_meta_run(
-    body: StubRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> StubResponse:
-    """Phase 8: Meta-analysis stub."""
-    return await _create_phase_result(db, 8, body)
 
 
 @router.post(

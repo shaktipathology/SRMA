@@ -110,13 +110,12 @@ async def test_full_11_phase_pipeline(
     assert r3.status_code == 201, f"Phase 3/4 screening failed: {r3.text}"
 
     # ------------------------------------------------------------------
-    # Phases 5–9 — Stub endpoints
+    # Phases 5, 6, 7, 9 — Stub endpoints
     # ------------------------------------------------------------------
     stub_cases = [
         (5, "/api/v1/fulltext/screen", {}),
         (6, "/api/v1/extract", {"n_included": 3}),
         (7, "/api/v1/rob/assess", {"overall_rob": "low"}),
-        (8, "/api/v1/meta/run", {"i2": 25, "pooled_rr": 0.72}),
         (9, "/api/v1/pubias/assess", {"egger_pval": 0.32}),
     ]
 
@@ -127,8 +126,35 @@ async def test_full_11_phase_pipeline(
         assert body["phase"] == expected_phase, (
             f"Expected phase={expected_phase}, got {body['phase']}"
         )
-        assert body["status"] == "stub"
-        assert "id" in body
+
+    # ------------------------------------------------------------------
+    # Phase 8 — Real meta-analysis (stats worker mocked)
+    # ------------------------------------------------------------------
+    import base64 as _b64
+    fake_pool = {
+        "pooled_effect": 0.72, "ci_lower": 0.55, "ci_upper": 0.92,
+        "i2": 25.0, "tau2": 0.01, "q_pval": 0.34,
+        "pred_lower": 0.40, "pred_upper": 1.10,
+        "forest_plot": _b64.b64encode(b"fake-png").decode(),
+    }
+    with patch(
+        "app.services.stats_worker.run_pool",
+        new_callable=AsyncMock,
+        return_value=fake_pool,
+    ):
+        r8 = await client.post(
+            "/api/v1/meta",
+            json={
+                "review_id": rid,
+                "study_labels": ["A", "B", "C"],
+                "effect_sizes": [0.65, 0.78, 0.72],
+                "standard_errors": [0.10, 0.12, 0.09],
+                "measure": "RR",
+            },
+        )
+    assert r8.status_code == 201, f"Phase 8 meta failed: {r8.text}"
+    assert r8.json()["phase"] == 8
+    assert r8.json()["status"] == "complete"
 
     # ------------------------------------------------------------------
     # Phase 10 — GRADE certainty assessment (pure rule-based, no Claude)

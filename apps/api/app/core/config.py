@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Grobid
     grobid_url: str = "http://localhost:8070"
 
+    # Stats Worker
+    stats_worker_url: str = "http://localhost:8001"
+
     # Claude / Anthropic
     anthropic_api_key: str = ""
 
