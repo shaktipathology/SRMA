@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.db import engine
 from app.routers import health, papers, reviews, protocol, search, screening
-from app.routers import grade, sof, manuscript, prisma_check, stubs, meta
+from app.routers import grade, sof, manuscript, prisma_check, stubs, meta, fulltext_screen
 
 
 @asynccontextmanager
@@ -42,6 +42,7 @@ app.include_router(sof.router, prefix="/api/v1/sof", tags=["sof"])
 app.include_router(manuscript.router, prefix="/api/v1/manuscript", tags=["manuscript"])
 app.include_router(prisma_check.router, prefix="/api/v1/prisma", tags=["prisma"])
 app.include_router(meta.router, prefix="/api/v1/meta", tags=["meta-analysis"])
+app.include_router(fulltext_screen.router, prefix="/api/v1/fulltext", tags=["fulltext-screening"])
 app.include_router(stubs.router, prefix="/api/v1", tags=["stubs"])
 
 

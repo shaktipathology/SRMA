@@ -32,6 +32,9 @@ class ScreeningDecision(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         UUID(as_uuid=True), nullable=True
     )
 
+    # Screening stage: "ti_ab" (title/abstract) or "fulltext"
+    stage: Mapped[str] = mapped_column(String(20), nullable=False, default="ti_ab", index=True)
+
     # Dual-agent labels: include | exclude | uncertain
     agent1_label: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     agent2_label: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)

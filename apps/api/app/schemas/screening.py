@@ -19,6 +19,7 @@ class ScreeningDecisionOut(BaseModel):
     id: uuid.UUID
     paper_id: uuid.UUID
     review_id: Optional[uuid.UUID] = None
+    stage: str = "ti_ab"
     is_duplicate: bool
     duplicate_of_paper_id: Optional[uuid.UUID] = None
     agent1_label: Optional[str] = None

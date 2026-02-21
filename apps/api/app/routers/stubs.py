@@ -18,7 +18,6 @@ from app.schemas.stubs import StubRequest, StubResponse
 router = APIRouter()
 
 PHASE_NAMES = {
-    5: "Full-text screening",
     6: "Data extraction",
     7: "Risk of bias assessment",
     9: "Publication bias assessment",
@@ -46,20 +45,6 @@ async def _create_phase_result(
         id=pr.id,
         message=f"Phase {phase_number} ({PHASE_NAMES[phase_number]}) stub recorded.",
     )
-
-
-@router.post(
-    "/fulltext/screen",
-    response_model=StubResponse,
-    status_code=status.HTTP_201_CREATED,
-    tags=["stubs"],
-)
-async def phase5_fulltext_screen(
-    body: StubRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> StubResponse:
-    """Phase 5: Full-text screening stub."""
-    return await _create_phase_result(db, 5, body)
 
 
 @router.post(

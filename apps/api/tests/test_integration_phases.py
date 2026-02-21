@@ -110,10 +110,28 @@ async def test_full_11_phase_pipeline(
     assert r3.status_code == 201, f"Phase 3/4 screening failed: {r3.text}"
 
     # ------------------------------------------------------------------
-    # Phases 5, 6, 7, 9 — Stub endpoints
+    # Phase 5 — Full-text screening (real endpoint, screener mocked)
+    # ------------------------------------------------------------------
+    fake_ft_agents = (
+        {"label": "include", "reasoning": "Full text confirms eligibility."},
+        {"label": "include", "reasoning": "Design meets criteria."},
+    )
+    with patch(
+        "app.services.screener.screen_fulltext_paper",
+        new_callable=AsyncMock,
+        return_value=fake_ft_agents,
+    ):
+        r5 = await client.post(
+            "/api/v1/fulltext/screen",
+            json={"review_id": rid},
+        )
+    assert r5.status_code == 201, f"Phase 5 fulltext screening failed: {r5.text}"
+    assert r5.json()["screened"] > 0
+
+    # ------------------------------------------------------------------
+    # Phases 6, 7, 9 — Stub endpoints
     # ------------------------------------------------------------------
     stub_cases = [
-        (5, "/api/v1/fulltext/screen", {}),
         (6, "/api/v1/extract", {"n_included": 3}),
         (7, "/api/v1/rob/assess", {"overall_rob": "low"}),
         (9, "/api/v1/pubias/assess", {"egger_pval": 0.32}),
