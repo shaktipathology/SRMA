@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.db import engine
 from app.routers import health, papers, reviews, protocol, search, screening
+from app.routers import grade, sof, manuscript, prisma_check, stubs
 
 
 @asynccontextmanager
@@ -36,6 +37,11 @@ app.include_router(reviews.router, prefix="/api/v1/reviews", tags=["reviews"])
 app.include_router(protocol.router, prefix="/api/v1/protocol", tags=["protocol"])
 app.include_router(search.router, prefix="/api/v1/search", tags=["search"])
 app.include_router(screening.router, prefix="/api/v1/screen", tags=["screening"])
+app.include_router(grade.router, prefix="/api/v1/grade", tags=["grade"])
+app.include_router(sof.router, prefix="/api/v1/sof", tags=["sof"])
+app.include_router(manuscript.router, prefix="/api/v1/manuscript", tags=["manuscript"])
+app.include_router(prisma_check.router, prefix="/api/v1/prisma", tags=["prisma"])
+app.include_router(stubs.router, prefix="/api/v1", tags=["stubs"])
 
 
 @app.get("/")

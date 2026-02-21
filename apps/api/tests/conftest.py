@@ -132,3 +132,61 @@ def mock_ncbi():
         return_value=1234,
     ) as m:
         yield m
+
+
+# ---------------------------------------------------------------------------
+# GRADE / manuscript fixtures
+# ---------------------------------------------------------------------------
+
+FAKE_GRADE_OUTCOME = {
+    "outcome_name": "All-cause mortality",
+    "study_design": "rct",
+    "n_studies": 5,
+    "total_n": 1200,
+    "rob_summary": "low",
+    "i2": 22.0,
+    "prediction_interval_crosses_null": False,
+    "directness": "direct",
+    "measure": "RR",
+    "ci_lower": 0.55,
+    "ci_upper": 0.92,
+    "effect_size": 0.72,
+    "n_studies_for_funnel": 5,
+    "large_effect": False,
+    "dose_response": False,
+    "importance": "critical",
+}
+
+FAKE_SOF_REQUEST = {
+    "population": "Adults with HF",
+    "intervention": "Statin therapy",
+    "comparator": "Placebo",
+    "outcomes": [
+        {
+            "outcome_name": "All-cause mortality",
+            "importance": "critical",
+            "n_studies": 5,
+            "n_participants": 1200,
+            "effect_measure": "RR",
+            "effect_size": 0.72,
+            "ci_lower": 0.55,
+            "ci_upper": 0.92,
+            "certainty": "high",
+            "footnotes": [],
+        }
+    ],
+}
+
+
+@pytest.fixture
+def mock_claude_manuscript():
+    with patch(
+        "app.services.claude.generate_methods_narrative",
+        new_callable=AsyncMock,
+        return_value="[Methods text]",
+    ) as m1, patch(
+        "app.services.claude.generate_results_narrative",
+        new_callable=AsyncMock,
+        return_value="[Results text]",
+    ) as m2:
+        yield m1, m2

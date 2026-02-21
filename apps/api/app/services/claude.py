@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import anthropic
 
@@ -83,3 +83,51 @@ async def build_pubmed_search(pico_schema: Dict[str, Any]) -> Dict[str, Any]:
     text = response.content[0].text
     result = _parse_json_from_response(text)
     return result
+
+
+METHODS_NARRATIVE_SYSTEM = """\
+You are an academic medical writer. Write 2–3 concise sentences describing the study selection methods
+for a systematic review based on the provided PICO and search strategy. Use passive voice, past tense.
+Return plain text only — no JSON, no markdown.
+"""
+
+RESULTS_NARRATIVE_SYSTEM = """\
+You are an academic medical writer. Write 2–3 concise sentences summarising the study selection results
+and certainty of evidence for a systematic review. Use passive voice, past tense.
+Return plain text only — no JSON, no markdown.
+"""
+
+
+async def generate_methods_narrative(pico: Dict[str, Any], search_string: str) -> str:
+    """Call Claude to generate a Methods narrative for study selection."""
+    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key or None)
+    user_content = (
+        f"PICO:\n{json.dumps(pico, indent=2)}\n\n"
+        f"Search string:\n{search_string}"
+    )
+    response = await client.messages.create(
+        model=MODEL,
+        max_tokens=512,
+        system=METHODS_NARRATIVE_SYSTEM,
+        messages=[{"role": "user", "content": user_content}],
+    )
+    return response.content[0].text.strip()
+
+
+async def generate_results_narrative(
+    screening_counts: Dict[str, Any],
+    grade_outcomes: List[Dict[str, Any]],
+) -> str:
+    """Call Claude to generate a Results narrative summarising screening and GRADE."""
+    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key or None)
+    user_content = (
+        f"Screening counts:\n{json.dumps(screening_counts, indent=2)}\n\n"
+        f"GRADE outcomes:\n{json.dumps(grade_outcomes, indent=2)}"
+    )
+    response = await client.messages.create(
+        model=MODEL,
+        max_tokens=512,
+        system=RESULTS_NARRATIVE_SYSTEM,
+        messages=[{"role": "user", "content": user_content}],
+    )
+    return response.content[0].text.strip()

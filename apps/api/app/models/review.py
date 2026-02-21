@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from app.models.stats_job import StatsJob
     from app.models.protocol_version import ProtocolVersion
     from app.models.search_query import SearchQuery
+    from app.models.grade_assessment import GradeAssessment
+    from app.models.phase_result import PhaseResult
 
 
 class Review(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -34,6 +36,12 @@ class Review(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     search_queries: Mapped[List[SearchQuery]] = relationship(
         "SearchQuery", back_populates="review", cascade="all, delete-orphan"
+    )
+    grade_assessments: Mapped[List["GradeAssessment"]] = relationship(
+        "GradeAssessment", back_populates="review", cascade="all, delete-orphan"
+    )
+    phase_results: Mapped[List["PhaseResult"]] = relationship(
+        "PhaseResult", back_populates="review", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
