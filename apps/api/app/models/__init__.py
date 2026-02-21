@@ -9,9 +9,10 @@ from app.models.screening_decision import ScreeningDecision
 from app.models.grade_assessment import GradeAssessment
 from app.models.phase_result import PhaseResult
 from app.models.data_extraction import DataExtraction
+from app.models.rob_assessment import RobAssessment
 
 __all__ = [
     "Base", "Review", "Paper", "StatsJob", "ProtocolVersion",
     "SearchQuery", "ScreeningDecision", "GradeAssessment", "PhaseResult",
-    "DataExtraction",
+    "DataExtraction", "RobAssessment",
 ]

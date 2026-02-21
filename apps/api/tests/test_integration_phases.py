@@ -157,10 +157,36 @@ async def test_full_11_phase_pipeline(
     assert r6.json()["extracted"] > 0
 
     # ------------------------------------------------------------------
-    # Phases 7, 9 — Stub endpoints
+    # Phase 7 — Risk of bias assessment (real endpoint, Claude mocked)
+    # ------------------------------------------------------------------
+    fake_rob = {
+        "tool": "rob2",
+        "domains": [
+            {"name": "Randomization process", "judgment": "low", "rationale": "Adequate."},
+            {"name": "Deviations from intended interventions", "judgment": "low", "rationale": "Blinded."},
+            {"name": "Missing outcome data", "judgment": "low", "rationale": "<5% loss."},
+            {"name": "Measurement of the outcome", "judgment": "low", "rationale": "Blinded assessors."},
+            {"name": "Selection of the reported result", "judgment": "low", "rationale": "Pre-registered."},
+        ],
+        "overall_judgment": "low",
+        "notes": None,
+    }
+    with patch(
+        "app.services.claude.assess_rob",
+        new_callable=AsyncMock,
+        return_value=fake_rob,
+    ):
+        r7 = await client.post(
+            "/api/v1/rob/assess",
+            json={"review_id": rid},
+        )
+    assert r7.status_code == 201, f"Phase 7 RoB failed: {r7.text}"
+    assert r7.json()["assessed"] > 0
+
+    # ------------------------------------------------------------------
+    # Phase 9 — Stub endpoint
     # ------------------------------------------------------------------
     stub_cases = [
-        (7, "/api/v1/rob/assess", {"overall_rob": "low"}),
         (9, "/api/v1/pubias/assess", {"egger_pval": 0.32}),
     ]
 

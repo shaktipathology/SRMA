@@ -133,6 +133,97 @@ async def generate_results_narrative(
     return response.content[0].text.strip()
 
 
+ROB2_SYSTEM = """\
+You are a systematic review methodologist applying the Cochrane Risk of Bias 2 (RoB 2) tool for randomised controlled trials.
+
+Assess the five RoB 2 domains and return ONLY valid JSON — no markdown, no prose, no code fences.
+
+Schema:
+{
+  "tool": "rob2",
+  "domains": [
+    {
+      "name": "<domain name>",
+      "judgment": "low" | "some_concerns" | "high",
+      "rationale": "<≤60 words citing specific text evidence>"
+    }
+  ],
+  "overall_judgment": "low" | "some_concerns" | "high",
+  "notes": "<optional string or null>"
+}
+
+The five RoB 2 domains (use these exact names):
+1. Randomization process
+2. Deviations from intended interventions
+3. Missing outcome data
+4. Measurement of the outcome
+5. Selection of the reported result
+
+Overall judgment rules:
+- "low"           → all domains low
+- "some_concerns" → at least one domain some_concerns, none high
+- "high"          → at least one domain high
+"""
+
+ROBINS_I_SYSTEM = """\
+You are a systematic review methodologist applying the ROBINS-I tool for non-randomised studies of interventions.
+
+Assess the seven ROBINS-I domains and return ONLY valid JSON — no markdown, no prose, no code fences.
+
+Schema:
+{
+  "tool": "robins-i",
+  "domains": [
+    {
+      "name": "<domain name>",
+      "judgment": "low" | "moderate" | "serious" | "critical",
+      "rationale": "<≤60 words citing specific text evidence>"
+    }
+  ],
+  "overall_judgment": "low" | "moderate" | "serious" | "critical",
+  "notes": "<optional string or null>"
+}
+
+The seven ROBINS-I domains (use these exact names):
+1. Confounding
+2. Selection of participants
+3. Classification of interventions
+4. Deviations from intended interventions
+5. Missing data
+6. Measurement of outcomes
+7. Selection of the reported result
+"""
+
+_ROB_MAX_CHARS = 8_000
+
+
+async def assess_rob(
+    title: Optional[str],
+    full_text: str,
+    tool: str = "rob2",
+) -> Dict[str, Any]:
+    """
+    Call Claude to perform risk of bias assessment using RoB 2 or ROBINS-I.
+    Returns a dict with 'tool', 'domains', 'overall_judgment', 'notes'.
+    """
+    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key or None)
+    system = ROB2_SYSTEM if tool == "rob2" else ROBINS_I_SYSTEM
+
+    excerpt = full_text[:_ROB_MAX_CHARS]
+    if len(full_text) > _ROB_MAX_CHARS:
+        excerpt += "\n[... text truncated ...]"
+
+    user_content = f"Title: {title or '(no title)'}\n\nFull-text excerpt:\n{excerpt}"
+
+    response = await client.messages.create(
+        model=MODEL,
+        max_tokens=2048,
+        system=system,
+        messages=[{"role": "user", "content": user_content}],
+    )
+    return _parse_json_from_response(response.content[0].text)
+
+
 EXTRACTION_SYSTEM = """\
 You are a systematic review data extractor. Extract structured data from the paper provided.
 
