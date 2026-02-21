@@ -17,43 +17,4 @@ from app.schemas.stubs import StubRequest, StubResponse
 
 router = APIRouter()
 
-PHASE_NAMES = {
-    9: "Publication bias assessment",
-}
-
-
-async def _create_phase_result(
-    db: AsyncSession,
-    phase_number: int,
-    body: StubRequest,
-) -> StubResponse:
-    pr = PhaseResult(
-        review_id=body.review_id,
-        phase_number=phase_number,
-        phase_name=PHASE_NAMES[phase_number],
-        status="stub",
-        result_data=body.payload,
-    )
-    db.add(pr)
-    await db.commit()
-    await db.refresh(pr)
-    return StubResponse(
-        phase=phase_number,
-        status="stub",
-        id=pr.id,
-        message=f"Phase {phase_number} ({PHASE_NAMES[phase_number]}) stub recorded.",
-    )
-
-
-@router.post(
-    "/pubias/assess",
-    response_model=StubResponse,
-    status_code=status.HTTP_201_CREATED,
-    tags=["stubs"],
-)
-async def phase9_pubias_assess(
-    body: StubRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> StubResponse:
-    """Phase 9: Publication bias assessment stub."""
-    return await _create_phase_result(db, 9, body)
+PHASE_NAMES: dict = {}  # all phases now have real implementations

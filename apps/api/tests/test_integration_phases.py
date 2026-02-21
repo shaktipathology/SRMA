@@ -184,19 +184,34 @@ async def test_full_11_phase_pipeline(
     assert r7.json()["assessed"] > 0
 
     # ------------------------------------------------------------------
-    # Phase 9 — Stub endpoint
+    # Phase 9 — Publication bias assessment (real endpoint, stats worker mocked)
     # ------------------------------------------------------------------
-    stub_cases = [
-        (9, "/api/v1/pubias/assess", {"egger_pval": 0.32}),
-    ]
-
-    for expected_phase, path, payload in stub_cases:
-        r = await client.post(path, json={"review_id": rid, "payload": payload})
-        assert r.status_code == 201, f"Phase {expected_phase} stub failed: {r.text}"
-        body = r.json()
-        assert body["phase"] == expected_phase, (
-            f"Expected phase={expected_phase}, got {body['phase']}"
+    import base64 as _b64
+    fake_funnel = {
+        "egger_pval": 0.42,
+        "trimfill_effect": 0.70,
+        "trimfill_ci_lower": 0.52,
+        "trimfill_ci_upper": 0.90,
+        "funnel_plot": _b64.b64encode(b"fake-funnel").decode(),
+    }
+    with patch(
+        "app.services.stats_worker.run_funnel",
+        new_callable=AsyncMock,
+        return_value=fake_funnel,
+    ):
+        r9 = await client.post(
+            "/api/v1/pubias/assess",
+            json={
+                "review_id": rid,
+                "study_labels": ["A", "B", "C"],
+                "effect_sizes": [0.65, 0.78, 0.72],
+                "standard_errors": [0.10, 0.12, 0.09],
+                "measure": "RR",
+            },
         )
+    assert r9.status_code == 201, f"Phase 9 pubias failed: {r9.text}"
+    assert r9.json()["phase"] == 9
+    assert r9.json()["assessment"] == "low_concern"
 
     # ------------------------------------------------------------------
     # Phase 8 — Real meta-analysis (stats worker mocked)
