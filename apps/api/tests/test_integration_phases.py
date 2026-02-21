@@ -129,10 +129,37 @@ async def test_full_11_phase_pipeline(
     assert r5.json()["screened"] > 0
 
     # ------------------------------------------------------------------
-    # Phases 6, 7, 9 — Stub endpoints
+    # Phase 6 — Data extraction (real endpoint, Claude mocked)
+    # ------------------------------------------------------------------
+    fake_extracted = {
+        "study_design": "randomised controlled trial",
+        "population": "Adults with HF",
+        "n_total": 500, "n_intervention": 250, "n_control": 250,
+        "mean_age": 65.0, "percent_female": 42.0,
+        "setting": "multicentre", "country": "USA",
+        "intervention": "Statin", "comparator": "Placebo",
+        "follow_up_months": 12.0,
+        "outcomes": [{"name": "Mortality", "measure_type": "RR", "value": 0.72,
+                      "ci_lower": 0.55, "ci_upper": 0.92, "p_value": 0.008,
+                      "time_point": "12 months"}],
+        "notes": None,
+    }
+    with patch(
+        "app.services.claude.extract_paper_data",
+        new_callable=AsyncMock,
+        return_value=fake_extracted,
+    ):
+        r6 = await client.post(
+            "/api/v1/extract",
+            json={"review_id": rid},
+        )
+    assert r6.status_code == 201, f"Phase 6 extract failed: {r6.text}"
+    assert r6.json()["extracted"] > 0
+
+    # ------------------------------------------------------------------
+    # Phases 7, 9 — Stub endpoints
     # ------------------------------------------------------------------
     stub_cases = [
-        (6, "/api/v1/extract", {"n_included": 3}),
         (7, "/api/v1/rob/assess", {"overall_rob": "low"}),
         (9, "/api/v1/pubias/assess", {"egger_pval": 0.32}),
     ]

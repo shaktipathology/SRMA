@@ -18,7 +18,6 @@ from app.schemas.stubs import StubRequest, StubResponse
 router = APIRouter()
 
 PHASE_NAMES = {
-    6: "Data extraction",
     7: "Risk of bias assessment",
     9: "Publication bias assessment",
 }
@@ -45,20 +44,6 @@ async def _create_phase_result(
         id=pr.id,
         message=f"Phase {phase_number} ({PHASE_NAMES[phase_number]}) stub recorded.",
     )
-
-
-@router.post(
-    "/extract",
-    response_model=StubResponse,
-    status_code=status.HTTP_201_CREATED,
-    tags=["stubs"],
-)
-async def phase6_extract(
-    body: StubRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> StubResponse:
-    """Phase 6: Data extraction stub."""
-    return await _create_phase_result(db, 6, body)
 
 
 @router.post(

@@ -131,3 +131,78 @@ async def generate_results_narrative(
         messages=[{"role": "user", "content": user_content}],
     )
     return response.content[0].text.strip()
+
+
+EXTRACTION_SYSTEM = """\
+You are a systematic review data extractor. Extract structured data from the paper provided.
+
+Return ONLY valid JSON — no markdown, no prose, no code fences.
+
+Schema:
+{
+  "study_design": "<string: e.g. randomised controlled trial, cohort study>",
+  "population": "<string: brief description>",
+  "n_total": <integer or null>,
+  "n_intervention": <integer or null>,
+  "n_control": <integer or null>,
+  "mean_age": <float or null>,
+  "percent_female": <float or null>,
+  "setting": "<string or null>",
+  "country": "<string or null>",
+  "intervention": "<string>",
+  "comparator": "<string>",
+  "follow_up_months": <float or null>,
+  "outcomes": [
+    {
+      "name": "<string>",
+      "measure_type": "<OR|RR|HR|MD|SMD|other>",
+      "value": <float or null>,
+      "ci_lower": <float or null>,
+      "ci_upper": <float or null>,
+      "p_value": <float or null>,
+      "time_point": "<string or null>"
+    }
+  ],
+  "notes": "<string or null>"
+}
+
+Rules:
+- Use null for any field that cannot be determined from the text
+- outcomes must be a list (may be empty if no quantitative results found)
+- Extract all outcomes reported, not just the primary outcome
+"""
+
+# Maximum characters of paper text sent for extraction
+_EXTRACT_MAX_CHARS = 8_000
+
+
+async def extract_paper_data(
+    title: Optional[str],
+    full_text: str,
+    extraction_template: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Call Claude to extract structured data from a paper's full text.
+    Returns a dict matching the extraction schema above.
+    """
+    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key or None)
+
+    excerpt = full_text[:_EXTRACT_MAX_CHARS]
+    if len(full_text) > _EXTRACT_MAX_CHARS:
+        excerpt += "\n[... text truncated ...]"
+
+    lines = []
+    if extraction_template:
+        lines.append(f"Additional extraction instructions:\n{extraction_template}\n")
+    lines.append(f"Title: {title or '(no title)'}")
+    lines.append(f"\nFull-text excerpt:\n{excerpt}")
+    user_content = "\n".join(lines)
+
+    response = await client.messages.create(
+        model=MODEL,
+        max_tokens=2048,
+        system=EXTRACTION_SYSTEM,
+        messages=[{"role": "user", "content": user_content}],
+    )
+    text = response.content[0].text
+    return _parse_json_from_response(text)
